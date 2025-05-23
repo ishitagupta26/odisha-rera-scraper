@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Odisha RERA Project Scraper</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script>
+    async function startScraping() {
+        const table = document.getElementById("dataTable");
+        const tbody = table.querySelector("tbody");
+        const noDataMessage = document.getElementById("noDataMessage");
+
+        // Clear previous data
+        tbody.innerHTML = "";
+        table.classList.add("d-none");
+        noDataMessage.innerText = "⏳ Scraping in progress...";
+        noDataMessage.style.display = "block";
+
+        const btn = document.getElementById("scrapeBtn");
+        btn.disabled = true;
+        btn.innerText = "Scraping...";
+
+        // Call backend to start scraping
+        const response = await fetch("/scrape", { method: "POST" });
+
+        if (response.ok) {
+            await loadData();  // Reload the table with new data
+        } else {
+            noDataMessage.innerText = "❌ Scraping failed. Try again.";
+        }
+
+        btn.innerText = "Scrape Data";
+        btn.disabled = false;
+    }
+
+    async function loadData() {
+        const response = await fetch("/data");
+        const projects = await response.json();
+
+        const table = document.getElementById("dataTable");
+        const tbody = table.querySelector("tbody");
+        const noDataMessage = document.getElementById("noDataMessage");
+
+        tbody.innerHTML = "";
+
+        if (projects.length > 0) {
+            projects.forEach(project => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${project["Rera Regd. No"]}</td>
+                    <td>${project["Project Name"]}</td>
+                    <td>${project["Promoter Name"]}</td>
+                    <td>${project["Address of the Promoter"]}</td>
+                    <td>${project["GST No"]}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            table.classList.remove("d-none");
+            noDataMessage.style.display = "none";
+        } else {
+            table.classList.add("d-none");
+            noDataMessage.innerText = "⚠️ No project data available.";
+            noDataMessage.style.display = "block";
+        }
+    }
+
+    // Run this on initial page load
+    window.onload = function () {
+        document.getElementById("dataTable").classList.add("d-none");
+        document.getElementById("noDataMessage").innerText = "Click 'Scrape Data' to begin.";
+    };
+</script>
+
+
+</head>
+<body class="p-4">
+    <div class="text-center mb-4">
+        <h2>🏗️ Odisha RERA Project Scraper</h2>
+        <button id="scrapeBtn" onclick="startScraping()" class="btn btn-primary">Scrape Data</button>
+    </div>
+
+    <div class="container">
+        <table id="dataTable" class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>RERA No</th>
+                    <th>Project Name</th>
+                    <th>Promoter Name</th>
+                    <th>Address</th>
+                    <th>GST No</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will appear here after scraping -->
+            </tbody>
+             
+        </table>
+        <div id="noDataMessage" class="text-center text-muted mt-4">
+        ⚠️ No projects loaded. Click "Scrape Data" to begin.
+    </div>
+        <a href="/download" class="btn btn-success mt-3">Download CSV</a>
+    </div>
+</body>
+</html>
